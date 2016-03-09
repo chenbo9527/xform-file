@@ -31,10 +31,19 @@ public class FastdfsFileService {
 
     private static String FDFS_GROUP_NAME = "group01";
     private static String urlPrefix = "http://127.0.0.1:80/";
+    private static String FOLDER_PREFIX = System.getProperty("file.config.env");
     private static BASE64Decoder bs64Encoder = new BASE64Decoder();
 
+    static {
+        if(FOLDER_PREFIX == null || FOLDER_PREFIX.equals("")){
+            FOLDER_PREFIX = "dev";
+        }
+        logger.warn("The file.config.env is " + FOLDER_PREFIX);
+    }
+
     public FastdfsFileService() throws IOException, MyException {
-        String propPath = this.getClass().getResource("/fdfs.properties").getFile();
+
+        String propPath = this.getClass().getResource("/" + FOLDER_PREFIX + "/fdfs.properties").getFile();
         InputStream in = new FileInputStream(propPath);
         Properties prop = new Properties();
         prop.load(in);
@@ -42,7 +51,7 @@ public class FastdfsFileService {
         urlPrefix = "http://" + prop.getProperty("serverUri") + "/";
         in.close();
 
-        String config = this.getClass().getResource("/fdfs_client.conf").getFile();
+        String config = this.getClass().getResource("/" + FOLDER_PREFIX + "/fdfs_client.conf").getFile();
         ClientGlobal.init(config);
         TrackerClient client = new TrackerClient();
         trackerServer = client.getConnection();
@@ -145,7 +154,7 @@ public class FastdfsFileService {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             IOUtils.copy(inputStream, out);
-            System.out.println(new String(out.toByteArray()));
+//            System.out.println(new String(out.toByteArray()));
         } catch (IOException e) {
             logger.error("流转换异常", e);
         }

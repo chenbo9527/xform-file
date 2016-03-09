@@ -76,6 +76,13 @@
                 <artifactId>jetty-maven-plugin</artifactId>
                 <version>9.3.0.M2</version>
                 <configuration>
+                    <systemProperties>
+                        <systemProperty>
+                            <name>file.config.env</name>
+                            <value>dev</value>
+                            <!--<value>test</value>-->
+                        </systemProperty>
+                    </systemProperties>
                     <webApp>
                         <contextPath>/</contextPath>
                     </webApp>
