@@ -8,6 +8,7 @@ import org.csource.common.NameValuePair;
 import org.csource.fastdfs.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.misc.BASE64Decoder;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -16,7 +17,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Properties;
 
@@ -31,6 +31,7 @@ public class FastdfsFileService {
 
     private static String FDFS_GROUP_NAME = "group01";
     private static String urlPrefix = "http://127.0.0.1:80/";
+    private static BASE64Decoder bs64Encoder = new BASE64Decoder();
 
     public FastdfsFileService() throws IOException, MyException {
         String propPath = this.getClass().getResource("/fdfs.properties").getFile();
@@ -150,7 +151,12 @@ public class FastdfsFileService {
         }
 
         if (base64) {
-            byte[] bytes = Base64.getDecoder().decode(new String(out.toByteArray()));
+            byte[] bytes = new byte[0];
+            try {
+                bytes = bs64Encoder.decodeBuffer(new String(out.toByteArray()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             ByteArrayOutputStream out2 = new ByteArrayOutputStream();
             try {
