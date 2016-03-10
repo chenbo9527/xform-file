@@ -17,8 +17,6 @@
 
     <bean id="fileService" class="com.weibangong.xform.fileserver.FastdfsFileService"></bean>
 
-    <bean id="fileUpload" class="org.apache.commons.fileupload.servlet.ServletFileUpload"></bean>
-
     <!--<bean id="propertyConfigurer" class="com.weibangong.xform.config.ApplicationConfigurer">-->
         <!--<property name="baseLocation" value="classpath:/META-INF/"></property>-->
         <!--<property name="env" value="online"></property>-->

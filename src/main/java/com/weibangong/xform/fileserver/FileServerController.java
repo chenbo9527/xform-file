@@ -1,24 +1,18 @@
 package com.weibangong.xform.fileserver;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.support.DefaultMultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 /**
@@ -32,91 +26,56 @@ public class FileServerController {
     @Autowired
     private FastdfsFileService fileService;
 
-    @Autowired
-    private ServletFileUpload upload;
-
     @RequestMapping(method = RequestMethod.POST, value = "/upload")
     @ResponseBody
-    public Response uploadFile(HttpServletRequest req) {
-        String fileName = null; //文件名
-        String watermark = null; //水印
-        InputStream inputStream = null; //文件流
-        boolean base64 = false; //是否采用base64上传
-        long timeStamp = 0;
-        int locationShot = 0;
+    public Response uploadFile(@RequestParam(value = "fileName", required = true) String fileName,
+                               @RequestParam(value = "watermark", required = false) String watermark,
+                               @RequestParam(value = "base64", required = false, defaultValue = "false") boolean base64,
+                               @RequestParam(value = "timeStamp", required = false, defaultValue = "0") Long timeStamp,
+                               @RequestParam(value = "locationShot", required = false, defaultValue = "0") Integer locationShot,
+                               HttpServletRequest req) throws UnsupportedEncodingException {
 
         String url = null;
-
         //客户端用multipart的形式上传文件
-        if (ServletFileUpload.isMultipartContent(req)) {
-            List<FileItem> items = null;
-            try {
-                items = upload.parseRequest(req);
-            } catch (FileUploadException e) {
-                logger.error("解析multipart请求失败", e);
-                return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg("解析multipart请求失败").build();
+        if (req instanceof DefaultMultipartHttpServletRequest) {
+            List<MultipartFile> fileList = ((DefaultMultipartHttpServletRequest) req).getMultiFileMap().get("file");
+
+            MultipartFile file = null;
+            if (fileList != null && fileList.size() > 0) {
+                file = fileList.get(0);
             }
-            Iterator<FileItem> iter = items.iterator();
-
-            while (iter.hasNext()) {
-                FileItem item = iter.next();
-
-                if (item.isFormField()) {
-                    if (item.getFieldName() != null && item.getFieldName().equals("fileName")) {
-                        //获取fileName
-                        fileName = item.getString();
-                    } else if (item.getFieldName() != null && item.getFieldName().equals("watermark")) {
-                        //获取watermark
-                        watermark = item.getString();
-                    } else if (item.getFieldName() != null && item.getFieldName().equals("base64")) {
-                        base64 = Boolean.parseBoolean(item.getString());
-                    } else if (item.getFieldName() != null && item.getFieldName().equals("timeStamp")) {
-                        timeStamp = item.getString() != null ? Long.parseLong(item.getString()) : 0;
-                    } else if (item.getFieldName() != null && item.getFieldName().equals("locationShot")) {
-                        locationShot = item.getString() != null ? Integer.parseInt(item.getString()) : 0;
-                    }
-                } else {
-                    try {
-                        inputStream = item.getInputStream();
-                    } catch (IOException e) {
-                        logger.error("从multipart中获取文件流失败", e);
-                        return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg("从multipart中获取文件流失败").build();
-                    }
-                }
-            }
-
-        } else {//客户端直接用binary的形式上传文件
             try {
-                inputStream = req.getInputStream();
+                byte[] data = file.getBytes();
+                url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, data, base64);
+                return new RespBuilder().status(HttpStatus.OK.value()).setData("url", url).build();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (FileServerException e) {
+                return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg(e.getMessage()).build();
+            }
+            return new RespBuilder().status(HttpStatus.OK.value()).build();
+        } else {
+            //客户端采用二进制的方式上传
+            fileName = new String(fileName.getBytes("ISO-8859-1"),"UTF-8");
+            watermark = new String(watermark.getBytes("ISO-8859-1"),"UTF-8");
+            try {
+                InputStream inputStream = req.getInputStream();
+                url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, inputStream, base64);
+                return new RespBuilder().status(HttpStatus.OK.value()).setData("url", url).build();
             } catch (IOException e) {
                 logger.error("从binary中获取文件里失败", e);
                 return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg("从binary中获取文件里失败").build();
+            } catch (FileServerException e) {
+                return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg(e.getMessage()).build();
             }
-            fileName = req.getParameter("fileName");
-            watermark = req.getParameter("watermark");
-            base64 = Boolean.parseBoolean(req.getParameter("base64"));
-            timeStamp = req.getParameter("timeStamp") != null ? Long.parseLong(req.getParameter("timeStamp")) : 0;
-            locationShot = req.getParameter("locationShot") != null ? Integer.parseInt(req.getParameter("locationShot")) : 0;
-        }
-
-        if(fileName == null || fileName.equals("")){
-            return new RespBuilder().status(HttpStatus.BAD_REQUEST.value()).msg("fileName不能为空").build();
-        }
-
-        try{
-            //所有文件信息获取完再上传
-            url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, inputStream, base64);
-            return new RespBuilder().status(HttpStatus.OK.value()).setData("url", url).build();
-        }catch (FileServerException e){
-            return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg(e.getMessage()).build();
         }
 
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/delete")
     @ResponseBody
-    public Response deleteFile(@RequestParam(value = "fileName", required = true) String fileName){
-        if(fileName == null || fileName.equals("")){
+    public Response deleteFile(@RequestParam(value = "fileName", required = true) String fileName) {
+        if (fileName == null || fileName.equals("")) {
             return new RespBuilder().status(HttpStatus.BAD_REQUEST.value()).msg("fileName不能为空").build();
         }
 

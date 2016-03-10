@@ -69,23 +69,43 @@ public class FastdfsFileService {
      */
     public String saveFile(String fileName, String watermark, long timeStamp, int locationShot, InputStream inputStream, boolean base64) throws FileServerException {
 
-        byte[] imgData = translateToByteArray(inputStream, base64);
+        byte[] imgData = translateToByteArray(inputStream);
+
+        return saveFile(fileName, watermark, timeStamp, locationShot, imgData, base64);
+
+    }
+
+    public String saveFile(String fileName, String watermark, long timeStamp, int locationShot, byte[] imgData, boolean base64) throws FileServerException {
         String ext = getExtName(fileName);
         String path = null;
+
+        byte[] data = null;
+
+        //解码
+        if (base64) {
+            try {
+                data = bs64Encoder.decodeBuffer(new String(imgData));
+            } catch (IOException e) {
+                logger.error("解码失败", e);
+                throw new FileServerException("解码失败,请注意客户端base64字符串的处理", e);
+            }
+        }else {
+            data = imgData;
+        }
 
         try {
 
             //判断是否是图片，添加水印
             if (!StringUtils.isEmpty(watermark) && isImage(ext)) {
-                imgData = addWaterMark(imgData, watermark, fileName, timeStamp, locationShot);
+                data = addWaterMark(data, watermark, fileName, timeStamp, locationShot);
             }
 
             StorageClient1 client1 = new StorageClient1(trackerServer, null);
             NameValuePair[] metaList = new NameValuePair[3];
             metaList[0] = new NameValuePair("fileName", fileName);
             metaList[1] = new NameValuePair("fileExtName", ext);
-            metaList[2] = new NameValuePair("fileLength", String.valueOf(imgData.length));
-            path = client1.upload_file1(FDFS_GROUP_NAME, imgData, ext, metaList);
+            metaList[2] = new NameValuePair("fileLength", String.valueOf(data.length));
+            path = client1.upload_file1(FDFS_GROUP_NAME, data, ext, metaList);
         } catch (Exception e) {
             logger.error("文件上传到fdfs失败", e);
             throw new FileServerException("文件上传到fdfs失败", e);
@@ -154,7 +174,7 @@ public class FastdfsFileService {
      * @return
      * @throws IOException
      */
-    private byte[] translateToByteArray(InputStream inputStream, boolean base64) throws FileServerException {
+    private byte[] translateToByteArray(InputStream inputStream) throws FileServerException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             IOUtils.copy(inputStream, out);
@@ -164,23 +184,6 @@ public class FastdfsFileService {
             throw new FileServerException("流转换异常", e);
         }
 
-        if (base64) {
-            byte[] bytes = new byte[0];
-            try {
-                bytes = bs64Encoder.decodeBuffer(new String(out.toByteArray()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-            ByteArrayOutputStream out2 = new ByteArrayOutputStream();
-            try {
-                IOUtils.copy(in, out2);
-            } catch (IOException e) {
-                logger.error("流转换异常", e);
-                throw new FileServerException("流转换异常", e);
-            }
-            return out2.toByteArray();
-        }
         return out.toByteArray();
     }
 
