@@ -242,9 +242,9 @@ public class FastdfsFileService {
             return data;
         }
 
-        Font font = new Font(null, Font.PLAIN, 24);
+        Font font = new Font("新宋体", Font.PLAIN, 24);
         if (isSmallPic) {
-            font = new Font(null, Font.PLAIN, 9);
+            font = new Font("新宋体", Font.PLAIN, 9);
         }
 
         String shotTime = formatTime(shotTimestamp);
