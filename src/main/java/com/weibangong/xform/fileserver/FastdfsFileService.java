@@ -76,6 +76,8 @@ public class FastdfsFileService {
     }
 
     public String saveFile(String fileName, String watermark, long timeStamp, int locationShot, byte[] imgData, boolean base64) throws FileServerException {
+        logger.warn("fileName: " + fileName + ", watermark: " + watermark, "timeStamp: " + timeStamp, "locationShot: " + locationShot, "base64: " + base64);
+
         String ext = getExtName(fileName);
         String path = null;
 
