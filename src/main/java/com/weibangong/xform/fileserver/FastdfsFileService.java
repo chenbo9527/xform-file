@@ -82,9 +82,6 @@ public class FastdfsFileService {
 
         byte[] data = null;
 
-        logger.warn("fileName: " + fileName + ", watermark: " + watermark + "ext" + ext + ", timeStamp: " + timeStamp+ ", locationShot: " + locationShot + ", base64: " + base64);
-
-
         //解码
         if (base64) {
             try {
@@ -245,9 +242,9 @@ public class FastdfsFileService {
             return data;
         }
 
-        Font font = new Font("宋体", Font.PLAIN, 24);
+        Font font = new Font("黑体", Font.PLAIN, 24);
         if (isSmallPic) {
-            font = new Font("宋体", Font.PLAIN, 9);
+            font = new Font("黑体", Font.PLAIN, 9);
         }
 
         String shotTime = formatTime(shotTimestamp);
