@@ -15,7 +15,7 @@ import java.net.URISyntaxException;
 public class FileDelTest {
     private static Logger logger = LoggerFactory.getLogger(FileDelTest.class);
     public static void main(String[] args) throws URISyntaxException, IOException {
-        URI uri = new URIBuilder("http://localhost:12306/delete")
+        URI uri = new URIBuilder("http://localhost:9091/delete")
                 .addParameter("filename", "/image/M00/00/00/wKhjZFbZXIKATZvvAHoq2ghzN7I179.log".replaceFirst("^/", ""))
                 .build();
 

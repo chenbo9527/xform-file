@@ -13,6 +13,7 @@ import java.io.IOException;
 /**
  * Created by chenbo on 16/3/4.
  */
+@Deprecated
 public class FileDeleServlet extends HttpServlet {
     private FastdfsFileService fileService;
 
@@ -37,6 +38,10 @@ public class FileDeleServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String fileName = req.getParameter("filename");
 
-        fileService.deleteFile(fileName);
+        try {
+            fileService.deleteFile(fileName);
+        } catch (FileServerException e) {
+            e.printStackTrace();
+        }
     }
 }

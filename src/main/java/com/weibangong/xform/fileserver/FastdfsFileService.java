@@ -67,26 +67,28 @@ public class FastdfsFileService {
      * @throws IOException
      * @throws MyException
      */
-    public String saveFile(String fileName, String watermark, long timeStamp, int locationShot, InputStream inputStream, boolean base64) {
+    public String saveFile(String fileName, String watermark, long timeStamp, int locationShot, InputStream inputStream, boolean base64) throws FileServerException {
 
         byte[] imgData = translateToByteArray(inputStream, base64);
         String ext = getExtName(fileName);
-
-        //判断是否是图片，添加水印
-        if (!StringUtils.isEmpty(watermark) && isImage(ext)) {
-            imgData = addWaterMark(imgData, watermark, fileName, timeStamp, locationShot);
-        }
-
-        StorageClient1 client1 = new StorageClient1(trackerServer, null);
-        NameValuePair[] metaList = new NameValuePair[3];
-        metaList[0] = new NameValuePair("fileName", fileName);
-        metaList[1] = new NameValuePair("fileExtName", ext);
-        metaList[2] = new NameValuePair("fileLength", String.valueOf(imgData.length));
         String path = null;
+
         try {
+
+            //判断是否是图片，添加水印
+            if (!StringUtils.isEmpty(watermark) && isImage(ext)) {
+                imgData = addWaterMark(imgData, watermark, fileName, timeStamp, locationShot);
+            }
+
+            StorageClient1 client1 = new StorageClient1(trackerServer, null);
+            NameValuePair[] metaList = new NameValuePair[3];
+            metaList[0] = new NameValuePair("fileName", fileName);
+            metaList[1] = new NameValuePair("fileExtName", ext);
+            metaList[2] = new NameValuePair("fileLength", String.valueOf(imgData.length));
             path = client1.upload_file1(FDFS_GROUP_NAME, imgData, ext, metaList);
         } catch (Exception e) {
             logger.error("文件上传到fdfs失败", e);
+            throw new FileServerException("文件上传到fdfs失败", e);
         }
         return urlPrefix + path;
     }
@@ -99,7 +101,7 @@ public class FastdfsFileService {
      * @throws IOException
      * @throws MyException
      */
-    public void deleteFile(String filename) {
+    public void deleteFile(String filename) throws FileServerException{
         StorageClient1 client1 = new StorageClient1(trackerServer, null);
 
         if (filename != null || filename != "") {
@@ -107,9 +109,11 @@ public class FastdfsFileService {
                 int result = client1.delete_file1(filename.replaceFirst("^/", ""));
                 if (result != 0) {
                     logger.warn("文件删除失败, error code : " + result + "");
+                    throw new FileServerException("文件删除失败, error code : " + result + "");
                 }
             } catch (Exception e) {
                 logger.error("文件删除异常", e);
+                throw new FileServerException("文件删除异常", e);
             }
         }
     }
@@ -150,13 +154,14 @@ public class FastdfsFileService {
      * @return
      * @throws IOException
      */
-    private byte[] translateToByteArray(InputStream inputStream, boolean base64) {
+    private byte[] translateToByteArray(InputStream inputStream, boolean base64) throws FileServerException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             IOUtils.copy(inputStream, out);
 //            System.out.println(new String(out.toByteArray()));
         } catch (IOException e) {
             logger.error("流转换异常", e);
+            throw new FileServerException("流转换异常", e);
         }
 
         if (base64) {
@@ -172,6 +177,7 @@ public class FastdfsFileService {
                 IOUtils.copy(in, out2);
             } catch (IOException e) {
                 logger.error("流转换异常", e);
+                throw new FileServerException("流转换异常", e);
             }
             return out2.toByteArray();
         }
@@ -186,7 +192,7 @@ public class FastdfsFileService {
      * @param locationShot
      * @return
      */
-    private byte[] addWaterMark(byte[] data, String markContent, String filename, Long shotTimestamp, Integer locationShot) {
+    private byte[] addWaterMark(byte[] data, String markContent, String filename, Long shotTimestamp, Integer locationShot) throws FileServerException {
         //获取扩展名
         String ext = getExtName(filename);
         if (StringUtils.isEmpty(ext)) {
@@ -278,8 +284,8 @@ public class FastdfsFileService {
         try {
             succeed = ImageIO.write(src, ext, out);
         } catch (IOException e) {
-            logger.error("", e);
-            e.printStackTrace();
+            logger.error("打水印时写图片出错", e);
+            throw new FileServerException("打水印时写图片出错", e);
         }
 
         if (succeed) {
@@ -290,7 +296,7 @@ public class FastdfsFileService {
         }
     }
 
-    private BufferedImage getWatermarkSmallBgBufImage() {
+    private BufferedImage getWatermarkSmallBgBufImage() throws FileServerException {
         BufferedImage image = getWatermarkBigBgBufImage();
         image = new BufferedImage(image.getWidth() / 2, image.getHeight() / 2, BufferedImage.TYPE_INT_BGR);
         return image;
@@ -301,7 +307,7 @@ public class FastdfsFileService {
         return format.format(new Date(shotTimestamp));
     }
 
-    public BufferedImage getWatermarkBigBgBufImage() {
+    public BufferedImage getWatermarkBigBgBufImage() throws FileServerException {
         String path = this.getClass().getResource("/image/watermark_big_bg.png").getFile();
         BufferedImage image = null;
         try {
@@ -309,6 +315,7 @@ public class FastdfsFileService {
             image = ImageIO.read(in);
         } catch (Exception e) {
             logger.error("加载水印背景图失败", e);
+            throw new FileServerException("加载水印背景图失败", e);
         }
         return image;
     }

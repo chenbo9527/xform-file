@@ -4,61 +4,40 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.csource.common.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Created by guanxinquan on 16/2/25.
+ * Created by chenbo on 16/3/9.
  */
-@Deprecated
-public class FileUploadServlet extends HttpServlet {
+@Controller
+@RequestMapping("/file")
+public class FileServerController {
+    private Logger logger = LoggerFactory.getLogger(FileServerController.class);
 
+    @Autowired
     private FastdfsFileService fileService;
 
-    private static final Integer MAX_MEMORY_SIZE = 1024 * 1024 * 10;//10M
-
-    private static final Integer MAX_SIZE = 1024 * 1024 * 20;//20M
-
+    @Autowired
     private ServletFileUpload upload;
 
-    private static final Logger logger = LoggerFactory.getLogger(FileUploadServlet.class);
-
-    private static final DateFormat format = new SimpleDateFormat("yy年MM月dd日 HH:mm:ss");
-
-
-    @Override
-    public void init() throws ServletException {
-        super.init();
-        try {
-            fileService = new FastdfsFileService();
-            DiskFileItemFactory factory = new DiskFileItemFactory();
-
-            factory.setSizeThreshold(MAX_MEMORY_SIZE);
-            factory.setRepository((File) getServletContext().getAttribute("javax.servlet.context.tempdir"));
-            upload = new ServletFileUpload(factory);
-            upload.setSizeMax(MAX_SIZE);
-        } catch (Exception e) {
-            logger.error("start file service error", e);
-        }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        //super.doPost(req, resp);
+    @RequestMapping(method = RequestMethod.POST, value = "/upload")
+    @ResponseBody
+    public Response uploadFile(HttpServletRequest req) {
         String fileName = null; //文件名
         String watermark = null; //水印
         InputStream inputStream = null; //文件流
@@ -75,6 +54,7 @@ public class FileUploadServlet extends HttpServlet {
                 items = upload.parseRequest(req);
             } catch (FileUploadException e) {
                 logger.error("解析multipart请求失败", e);
+                return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg("解析multipart请求失败").build();
             }
             Iterator<FileItem> iter = items.iterator();
 
@@ -96,27 +76,56 @@ public class FileUploadServlet extends HttpServlet {
                         locationShot = item.getString() != null ? Integer.parseInt(item.getString()) : 0;
                     }
                 } else {
-                    inputStream = item.getInputStream();
+                    try {
+                        inputStream = item.getInputStream();
+                    } catch (IOException e) {
+                        logger.error("从multipart中获取文件流失败", e);
+                        return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg("从multipart中获取文件流失败").build();
+                    }
                 }
             }
 
         } else {//客户端直接用binary的形式上传文件
-            inputStream = req.getInputStream();
+            try {
+                inputStream = req.getInputStream();
+            } catch (IOException e) {
+                logger.error("从binary中获取文件里失败", e);
+                return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg("从binary中获取文件里失败").build();
+            }
             fileName = req.getParameter("fileName");
             watermark = req.getParameter("watermark");
             base64 = Boolean.parseBoolean(req.getParameter("base64"));
             timeStamp = req.getParameter("timeStamp") != null ? Long.parseLong(req.getParameter("timeStamp")) : 0;
             locationShot = req.getParameter("locationShot") != null ? Integer.parseInt(req.getParameter("locationShot")) : 0;
         }
-        //所有文件信息获取完再上传
-        try {
-            url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, inputStream, base64);
-        } catch (FileServerException e) {
-            e.printStackTrace();
+
+        if(fileName == null || fileName.equals("")){
+            return new RespBuilder().status(HttpStatus.BAD_REQUEST.value()).msg("fileName不能为空").build();
         }
 
-        resp.getOutputStream().write(url.getBytes());
-        resp.getOutputStream().close();
+        try{
+            //所有文件信息获取完再上传
+            url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, inputStream, base64);
+            return new RespBuilder().status(HttpStatus.OK.value()).setData("url", url).build();
+        }catch (FileServerException e){
+            return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg(e.getMessage()).build();
+        }
 
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "/delete")
+    @ResponseBody
+    public Response deleteFile(@RequestParam(value = "fileName", required = true) String fileName){
+        if(fileName == null || fileName.equals("")){
+            return new RespBuilder().status(HttpStatus.BAD_REQUEST.value()).msg("fileName不能为空").build();
+        }
+
+        try {
+            fileService.deleteFile(fileName);
+        } catch (FileServerException e) {
+            return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg(e.getMessage()).build();
+        }
+
+        return new RespBuilder().status(200).build();
     }
 }
