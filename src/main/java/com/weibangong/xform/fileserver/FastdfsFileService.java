@@ -35,7 +35,7 @@ public class FastdfsFileService {
     private static BASE64Decoder bs64Encoder = new BASE64Decoder();
 
     static {
-        if (FOLDER_PREFIX == null || FOLDER_PREFIX.equals("")) {
+        if(FOLDER_PREFIX == null || FOLDER_PREFIX.equals("")){
             FOLDER_PREFIX = "dev";
         }
         logger.warn("The file.config.env is " + FOLDER_PREFIX);
@@ -90,7 +90,7 @@ public class FastdfsFileService {
                 logger.error("解码失败", e);
                 throw new FileServerException("解码失败,请注意客户端base64字符串的处理", e);
             }
-        } else {
+        }else {
             data = imgData;
         }
 
@@ -122,7 +122,7 @@ public class FastdfsFileService {
      * @throws IOException
      * @throws MyException
      */
-    public void deleteFile(String filename) throws FileServerException {
+    public void deleteFile(String filename) throws FileServerException{
         StorageClient1 client1 = new StorageClient1(trackerServer, null);
 
         if (filename != null || filename != "") {
@@ -260,12 +260,12 @@ public class FastdfsFileService {
         int watermarkCordY = height - watermark.getHeight() + 5;
         //int watermarkWidth = watermark.getWidth() + 10;
         //一般情况下，采用时间的宽度加5
-        int watermarkCordX = (int) (width - timeRect.getWidth() - 20);
-        int watermarkWidth = (int) (timeRect.getWidth() + 40);
+        int watermarkCordX = (int) (width - timeRect.getWidth() - 30);
+        int watermarkWidth = (int) (timeRect.getWidth() + 30);
         //如果markContent大于宽度
-        if ((markContentRect.getWidth() + 5) > watermark.getWidth()) {
-            watermarkCordX = (int) (width - markContentRect.getWidth() - 20);
-            watermarkWidth = (int) (markContentRect.getWidth() + 40);
+        if (markContentRect.getWidth() > watermark.getWidth()) {
+            watermarkCordX = (int) (width - markContentRect.getWidth() - 30);
+            watermarkWidth = (int) (markContentRect.getWidth() + 30);
         }
 
         g2d.drawImage(watermark, watermarkCordX, watermarkCordY, watermarkWidth, watermark.getHeight() - 15, null);
