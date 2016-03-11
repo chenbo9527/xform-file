@@ -260,12 +260,12 @@ public class FastdfsFileService {
         int watermarkCordY = height - watermark.getHeight() + 5;
         //int watermarkWidth = watermark.getWidth() + 10;
         //一般情况下，采用时间的宽度加5
-        int watermarkCordX = (int) (width - timeRect.getWidth() - 30);
-        int watermarkWidth = (int) (timeRect.getWidth() + 30);
+        int watermarkCordX = (int) (width - timeRect.getWidth() - 40);
+        int watermarkWidth = (int) (timeRect.getWidth() + 20);
         //如果markContent大于宽度
-        if (markContentRect.getWidth() > watermark.getWidth()) {
-            watermarkCordX = (int) (width - markContentRect.getWidth() - 30);
-            watermarkWidth = (int) (markContentRect.getWidth() + 30);
+        if ((markContentRect.getWidth() + 5) > watermark.getWidth()) {
+            watermarkCordX = (int) (width - markContentRect.getWidth() - 40);
+            watermarkWidth = (int) (markContentRect.getWidth() + 20);
         }
 
         g2d.drawImage(watermark, watermarkCordX, watermarkCordY, watermarkWidth, watermark.getHeight() - 15, null);
