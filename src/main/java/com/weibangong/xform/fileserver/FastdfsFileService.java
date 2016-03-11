@@ -257,7 +257,7 @@ public class FastdfsFileService {
         // 画水印底图
         ///////////////////////////////////////////////////////////////////////
         //int watermarkCordX = width - watermark.getWidth() - 20;
-        int watermarkCordY = height - watermark.getHeight() + 10;
+        int watermarkCordY = height - watermark.getHeight() + 5;
         //int watermarkWidth = watermark.getWidth() + 10;
         //一般情况下，采用时间的宽度加5
         int watermarkCordX = (int) (width - timeRect.getWidth() - 40);
