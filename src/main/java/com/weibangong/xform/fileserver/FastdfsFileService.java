@@ -263,7 +263,7 @@ public class FastdfsFileService {
         int watermarkCordX = (int) (width - timeRect.getWidth() - 40);
         int watermarkWidth = (int) (timeRect.getWidth() + 28);
         //如果markContent大于宽度
-        if ((markContentRect.getWidth() + 5) > watermark.getWidth()) {
+        if (markContentRect.getWidth() > watermark.getWidth()) {
             watermarkCordX = (int) (width - markContentRect.getWidth() - 40);
             watermarkWidth = (int) (markContentRect.getWidth() + 28);
         }
