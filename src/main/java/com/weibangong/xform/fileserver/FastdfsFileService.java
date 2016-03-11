@@ -242,7 +242,7 @@ public class FastdfsFileService {
             return data;
         }
 
-        Font font = new Font("黑体", Font.PLAIN, 24);
+        Font font = new Font("黑体", Font.PLAIN, 22);
         if (isSmallPic) {
             font = new Font("黑体", Font.PLAIN, 9);
         }
