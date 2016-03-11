@@ -30,7 +30,7 @@ public class Base64UploadTest {
 //        System.out.println(new String(bytes));
 
         URI uri = new URIBuilder("http://king.weibangong.com:9091/api/file/upload")
-                .addParameter("watermark", "张三的三")
+                .addParameter("watermark", "路易斯安那")
                 .addParameter("fileName", "张三.png")
                 .addParameter("base64", "true")
                 .addParameter("timStamp", new Date().getTime() + "")
