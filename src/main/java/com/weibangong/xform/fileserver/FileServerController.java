@@ -57,7 +57,9 @@ public class FileServerController {
         } else {
             //客户端采用二进制的方式上传
             fileName = new String(fileName.getBytes("ISO-8859-1"),"UTF-8");
-            watermark = new String(watermark.getBytes("ISO-8859-1"),"UTF-8");
+            if(watermark != null){
+                watermark = new String(watermark.getBytes("ISO-8859-1"),"UTF-8");
+            }
             try {
                 InputStream inputStream = req.getInputStream();
                 url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, inputStream, base64);
