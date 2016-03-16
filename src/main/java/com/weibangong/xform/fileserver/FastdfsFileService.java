@@ -30,7 +30,6 @@ public class FastdfsFileService {
     TrackerServer trackerServer;
 
     private static String FDFS_GROUP_NAME = "group01";
-    private static String urlPrefix = "http://127.0.0.1:80/";
     private static String FOLDER_PREFIX = System.getProperty("file.config.env");
     private static BASE64Decoder bs64Encoder = new BASE64Decoder();
 
@@ -48,7 +47,6 @@ public class FastdfsFileService {
         Properties prop = new Properties();
         prop.load(in);
         FDFS_GROUP_NAME = prop.getProperty("groupName");
-        urlPrefix = "http://" + prop.getProperty("serverUri") + "/";
         in.close();
 
         String config = this.getClass().getResource("/" + FOLDER_PREFIX + "/fdfs_client.conf").getFile();
@@ -111,7 +109,7 @@ public class FastdfsFileService {
             logger.error("文件上传到fdfs失败", e);
             throw new FileServerException("文件上传到fdfs失败", e);
         }
-        return urlPrefix + path;
+        return path;
     }
 
     /**
