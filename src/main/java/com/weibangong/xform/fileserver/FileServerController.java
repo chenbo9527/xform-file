@@ -35,7 +35,7 @@ public class FileServerController {
                                @RequestParam(value = "locationShot", required = false, defaultValue = "0") Integer locationShot,
                                HttpServletRequest req) throws UnsupportedEncodingException {
 
-        String url = null;
+        String uri = null;
         //客户端用multipart的形式上传文件
         if (req instanceof DefaultMultipartHttpServletRequest) {
             List<MultipartFile> fileList = ((DefaultMultipartHttpServletRequest) req).getMultiFileMap().get("file");
@@ -46,8 +46,8 @@ public class FileServerController {
             }
             try {
                 byte[] data = file.getBytes();
-                url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, data, base64);
-                return new RespBuilder().status(HttpStatus.OK.value()).setData("url", url).build();
+                uri = fileService.saveFile(fileName, watermark, timeStamp, locationShot, data, base64);
+                return new RespBuilder().status(HttpStatus.OK.value()).setData("url", uri).build();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (FileServerException e) {
@@ -62,8 +62,8 @@ public class FileServerController {
             }
             try {
                 InputStream inputStream = req.getInputStream();
-                url = fileService.saveFile(fileName, watermark, timeStamp, locationShot, inputStream, base64);
-                return new RespBuilder().status(HttpStatus.OK.value()).setData("url", url).build();
+                uri = fileService.saveFile(fileName, watermark, timeStamp, locationShot, inputStream, base64);
+                return new RespBuilder().status(HttpStatus.OK.value()).setData("uri", uri).build();
             } catch (IOException e) {
                 logger.error("从binary中获取文件里失败", e);
                 return new RespBuilder().status(HttpStatus.INTERNAL_SERVER_ERROR.value()).msg("从binary中获取文件里失败").build();
