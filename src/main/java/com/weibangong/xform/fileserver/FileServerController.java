@@ -47,7 +47,7 @@ public class FileServerController {
             try {
                 byte[] data = file.getBytes();
                 uri = fileService.saveFile(fileName, watermark, timeStamp, locationShot, data, base64);
-                return new RespBuilder().status(HttpStatus.OK.value()).setData("url", uri).build();
+                return new RespBuilder().status(HttpStatus.OK.value()).setData("uri", uri).build();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (FileServerException e) {
